@@ -1,0 +1,6 @@
+{
+  "name": "ShieldX by SecuriPulse",
+  "description": "Professional cybersecurity & digital privacy application protecting devices, analyzing URL risks, managing permissions, and securing digital life.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

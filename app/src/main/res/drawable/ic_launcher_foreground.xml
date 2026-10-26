@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Cyber Shield Outer Contour -->
+    <path
+        android:fillColor="#102538"
+        android:strokeColor="#00F5A0"
+        android:strokeWidth="3.5"
+        android:strokeLineJoin="round"
+        android:pathData="M 54,20 L 82,32 C 82,65 67,86 54,94 C 41,86 26,65 26,32 Z" />
+
+    <!-- Inner Shield Accent -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00838F"
+        android:strokeWidth="1.2"
+        android:pathData="M 54,26 L 76,36 C 76,62 64,79 54,86 C 44,79 32,62 32,36 Z" />
+
+    <!-- Stylized Cyan 'X' -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#00FFC2"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M 42,44 L 66,68 M 66,44 L 42,68" />
+</vector>

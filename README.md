@@ -1,11 +1,31 @@
-<div align="center">
+# ShieldX by SecuriPulse
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+**ShieldX by SecuriPulse** is a production-grade Android cybersecurity and privacy application developed with Kotlin, Jetpack Compose, Material 3, and Room.
 
-  <h1>Built with AI Studio</h2>
+![ShieldX Cybersecurity Dashboard](/public/assets/aistudio/ShieldX_Neon_Cybersecurity_Dashboard_2ad7cc43.png)
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Highlights & Features
+- 🛡️ **Cyber Defense Dashboard**: Real-time device security status, active scan alerts, and key security metric indicators.
+- 🔍 **Safe URL & Phishing Scanner**: Analyzes web addresses for spoofing, deceptive homoglyphs, SSL/TLS flaws, and SSRF threat vectors (blocking loopbacks, internal RFC1918 IPs, and cloud metadata).
+- 📲 **Device Integrity & Permissions Auditor**: Checks root binaries, USB debugging status, developer options, and network connectivity state (VPN, Wi-Fi security).
+- ⚡ **Device Health & Telemetry**: Genuine on-device memory (RAM), battery thermal/percentage telemetry, and storage statistics using Android platform APIs.
+- 🔐 **Encrypted Privacy Vault**: Authenticated AES-GCM encrypted storage for sensitive credentials and private security notes.
+- 📚 **Interactive Learning Center**: Actionable lessons on phishing detection, password management, MFA best practices, and emergency incident response.
+- 📊 **Security Reports & History**: Room-backed persistent database logging every scan event and alert.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Architecture
+- **Language**: Kotlin 2.2
+- **UI Framework**: Jetpack Compose (Material Design 3)
+- **Local Database**: Android Room 2.7 (SQLite)
+- **Networking**: OkHttp 4 + Retrofit 2
+- **Design System**: Neon Cyber Obsidian theme (`#090D14` background, `#00F5A0` / `#00FFC2` glowing accents)
 
-</div>
+## Building & Verification
+- Compile and verify applet:
+  ```bash
+  gradle assembleDebug
+  ```
+- Run automated unit and Robolectric tests:
+  ```bash
+  gradle :app:testDebugUnitTest
+  ```

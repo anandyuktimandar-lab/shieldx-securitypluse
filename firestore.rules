@@ -1,0 +1,173 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Security Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidWatchlistCoin(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.coinId is string && data.coinId.size() >= 1 && data.coinId.size() <= 64 &&
+             data.symbol is string && data.symbol.size() >= 1 && data.symbol.size() <= 20 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPortfolioHolding(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.coinId is string && data.coinId.size() >= 1 && data.coinId.size() <= 64 &&
+             data.symbol is string && data.symbol.size() >= 1 && data.symbol.size() <= 20 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             (data.amount is int || data.amount is float) && data.amount > 0 &&
+             (data.buyPriceUsd is int || data.buyPriceUsd is float) && data.buyPriceUsd >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCloudScanReport(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.url is string && data.url.size() >= 1 && data.url.size() <= 1024 &&
+             data.domain is string && data.domain.size() >= 1 && data.domain.size() <= 255 &&
+             data.riskLevel is string && data.riskLevel in ['SAFE', 'SUSPICIOUS', 'HIGH_RISK', 'UNKNOWN'] &&
+             data.riskScore is int && data.riskScore >= 0 && data.riskScore <= 100 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 1000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. User-Scoped Subcollections
+    match /users/{userId} {
+
+      match /watchlist/{coinId} {
+        allow get: if isSignedIn() &&
+                      isValidId(userId) &&
+                      isValidId(coinId) &&
+                      request.auth.uid == userId &&
+                      existing().userId == request.auth.uid;
+
+        allow list: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(coinId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['userId', 'coinId', 'symbol', 'name', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'coinId', 'symbol', 'name', 'createdAt', 'updatedAt']) &&
+                         isValidWatchlistCoin(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidWatchlistCoin(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(coinId) &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().coinId == existing().coinId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['symbol', 'name', 'updatedAt']);
+
+        allow delete: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(coinId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid;
+      }
+
+      match /portfolio/{holdingId} {
+        allow get: if isSignedIn() &&
+                      isValidId(userId) &&
+                      isValidId(holdingId) &&
+                      request.auth.uid == userId &&
+                      existing().userId == request.auth.uid;
+
+        allow list: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(holdingId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['userId', 'coinId', 'symbol', 'name', 'amount', 'buyPriceUsd', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'coinId', 'symbol', 'name', 'amount', 'buyPriceUsd', 'createdAt', 'updatedAt']) &&
+                         isValidPortfolioHolding(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidPortfolioHolding(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(holdingId) &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().coinId == existing().coinId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'buyPriceUsd', 'updatedAt']);
+
+        allow delete: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(holdingId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid;
+      }
+
+      match /scans/{scanId} {
+        allow get: if isSignedIn() &&
+                      isValidId(userId) &&
+                      isValidId(scanId) &&
+                      request.auth.uid == userId &&
+                      existing().userId == request.auth.uid;
+
+        allow list: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(scanId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['userId', 'url', 'domain', 'riskLevel', 'riskScore', 'summary', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'url', 'domain', 'riskLevel', 'riskScore', 'summary', 'createdAt', 'updatedAt']) &&
+                         isValidCloudScanReport(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidCloudScanReport(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(scanId) &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().url == existing().url &&
+                         incoming().domain == existing().domain &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['summary', 'updatedAt']);
+
+        allow delete: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(scanId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid;
+      }
+    }
+  }
+}

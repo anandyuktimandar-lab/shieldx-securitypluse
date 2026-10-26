@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "WatchlistCoin": {
+      "title": "WatchlistCoin",
+      "description": "A cryptocurrency asset tracked on a user's personal watchlist.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "coinId": {
+          "type": "string",
+          "description": "Unique identifier of the cryptocurrency (e.g., bitcoin)."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "Ticker symbol (e.g., BTC)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the cryptocurrency."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when added (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "coinId", "symbol", "name", "createdAt", "updatedAt"]
+    },
+    "PortfolioHolding": {
+      "title": "PortfolioHolding",
+      "description": "A user's cryptocurrency portfolio position.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "coinId": {
+          "type": "string",
+          "description": "Cryptocurrency identifier (e.g., bitcoin)."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "Ticker symbol (e.g., BTC)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the asset."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Quantity of tokens held (> 0)."
+        },
+        "buyPriceUsd": {
+          "type": "number",
+          "description": "Average purchase price in USD (>= 0)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated."
+        }
+      },
+      "required": ["userId", "coinId", "symbol", "name", "amount", "buyPriceUsd", "createdAt", "updatedAt"]
+    },
+    "CloudScanReport": {
+      "title": "CloudScanReport",
+      "description": "A cloud-synced URL threat analysis report owned by a user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "url": {
+          "type": "string",
+          "description": "Scanned URL."
+        },
+        "domain": {
+          "type": "string",
+          "description": "Extracted hostname/domain."
+        },
+        "riskLevel": {
+          "type": "string",
+          "enum": ["SAFE", "SUSPICIOUS", "HIGH_RISK", "UNKNOWN"],
+          "description": "Evaluated risk classification."
+        },
+        "riskScore": {
+          "type": "integer",
+          "description": "Risk score from 0 to 100."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Summary of threat findings."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when scanned."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated."
+        }
+      },
+      "required": ["userId", "url", "domain", "riskLevel", "riskScore", "summary", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/watchlist/{coinId}": {
+      "schema": { "$ref": "#/entities/WatchlistCoin" },
+      "description": "Per-user cryptocurrency watchlist items."
+    },
+    "/users/{userId}/portfolio/{holdingId}": {
+      "schema": { "$ref": "#/entities/PortfolioHolding" },
+      "description": "Per-user cryptocurrency portfolio holdings."
+    },
+    "/users/{userId}/scans/{scanId}": {
+      "schema": { "$ref": "#/entities/CloudScanReport" },
+      "description": "Per-user cloud-synced URL scan reports."
+    }
+  }
+}
