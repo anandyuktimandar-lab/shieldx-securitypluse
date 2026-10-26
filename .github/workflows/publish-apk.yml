@@ -1,0 +1,115 @@
+name: Publish Precompiled Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'apk-distribution/app-debug.apk'
+      - 'apk-distribution/app-debug.apk.sha256'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-apk:
+    name: Validate & Publish Debug APK Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate APK and SHA-256 checksum
+        id: validate
+        run: |
+          set -euo pipefail
+
+          APK_PATH="apk-distribution/app-debug.apk"
+          SHA_PATH="apk-distribution/app-debug.apk.sha256"
+
+          if [ ! -f "$APK_PATH" ]; then
+            echo "Error: APK file not found at $APK_PATH" >&2
+            exit 1
+          fi
+
+          if [ ! -s "$APK_PATH" ]; then
+            echo "Error: APK file at $APK_PATH is empty" >&2
+            exit 1
+          fi
+
+          if [ ! -f "$SHA_PATH" ]; then
+            echo "Error: Checksum file not found at $SHA_PATH" >&2
+            exit 1
+          fi
+
+          echo "Verifying SHA-256 checksum..."
+          (
+            cd apk-distribution
+            sha256sum -c app-debug.apk.sha256
+          )
+
+          echo "Verifying ZIP archive integrity..."
+          unzip -tq "$APK_PATH"
+
+          APK_SIZE_BYTES=$(stat -c%s "$APK_PATH")
+          APK_SIZE_HUMAN=$(du -h "$APK_PATH" | cut -f1)
+          APK_SHA256=$(awk '{print $1}' "$SHA_PATH")
+
+          echo "apk_size_bytes=${APK_SIZE_BYTES}" >> "$GITHUB_OUTPUT"
+          echo "apk_size_human=${APK_SIZE_HUMAN}" >> "$GITHUB_OUTPUT"
+          echo "apk_sha256=${APK_SHA256}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release with app-debug.apk
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          RELEASE_TITLE="Android Debug APK (Build #${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})"
+          DIRECT_DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/app-debug.apk"
+          RELEASE_PAGE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
+
+          NOTES=$(cat <<EOF
+          Automated publication of precompiled Android debug APK from Google AI Studio.
+
+          - **Release Tag:** \`${RELEASE_TAG}\`
+          - **Asset Filename:** \`app-debug.apk\`
+          - **APK Size:** ${{ steps.validate.outputs.apk_size_human }} (${{ steps.validate.outputs.apk_size_bytes }} bytes)
+          - **SHA-256 Checksum:** \`${{ steps.validate.outputs.apk_sha256 }}\`
+          - **Direct Latest Download URL:** ${DIRECT_DOWNLOAD_URL}
+          EOF
+          )
+
+          gh release create "$RELEASE_TAG" \
+            "apk-distribution/app-debug.apk#app-debug.apk" \
+            --title "$RELEASE_TITLE" \
+            --notes "$NOTES" \
+            --latest
+
+          echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "release_page_url=${RELEASE_PAGE_URL}" >> "$GITHUB_OUTPUT"
+          echo "direct_download_url=${DIRECT_DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Write Job Summary
+        if: success()
+        run: |
+          cat <<EOF >> "$GITHUB_STEP_SUMMARY"
+          ## Android Debug APK Release Published
+
+          | Field | Value |
+          | :--- | :--- |
+          | **Release Tag** | \`${{ steps.release.outputs.release_tag }}\` |
+          | **APK Size** | ${{ steps.validate.outputs.apk_size_human }} (${{ steps.validate.outputs.apk_size_bytes }} bytes) |
+          | **SHA-256 Checksum** | \`${{ steps.validate.outputs.apk_sha256 }}\` |
+          | **GitHub Release Page** | [${{ steps.release.outputs.release_page_url }}](${{ steps.release.outputs.release_page_url }}) |
+          | **Direct Latest APK Download URL** | [${{ steps.release.outputs.direct_download_url }}](${{ steps.release.outputs.direct_download_url }}) |
+          EOF
+          echo "Release Tag: ${{ steps.release.outputs.release_tag }}"
+          echo "APK Size: ${{ steps.validate.outputs.apk_size_human }} (${{ steps.validate.outputs.apk_size_bytes }} bytes)"
+          echo "SHA-256: ${{ steps.validate.outputs.apk_sha256 }}"
+          echo "Release Page: ${{ steps.release.outputs.release_page_url }}"
+          echo "Direct Download URL: ${{ steps.release.outputs.direct_download_url }}"
