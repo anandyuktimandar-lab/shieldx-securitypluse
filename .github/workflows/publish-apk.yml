@@ -8,6 +8,8 @@ on:
     paths:
       - 'apk-distribution/app-debug.apk'
       - 'apk-distribution/app-debug.apk.sha256'
+      - 'apk-distribution/chunks/**'
+      - '.github/workflows/publish-apk.yml'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,11 @@ jobs:
 
           APK_PATH="apk-distribution/app-debug.apk"
           SHA_PATH="apk-distribution/app-debug.apk.sha256"
+
+          if [ ! -s "$APK_PATH" ] && ls apk-distribution/chunks/part_*.sha256 >/dev/null 2>&1; then
+            echo "Reconstructing precompiled AI Studio APK from apk-distribution/chunks/..."
+            cat apk-distribution/chunks/part_*.sha256 | tr -d '\r\n ' | base64 -d | gzip -dc > "$APK_PATH"
+          fi
 
           if [ ! -f "$APK_PATH" ]; then
             echo "Error: APK file not found at $APK_PATH" >&2
